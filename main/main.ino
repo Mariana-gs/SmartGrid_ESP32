@@ -1,9 +1,11 @@
 // Bibliotecas
 #include <WiFi.h>
-#include <FirebaseESP32.h>
+//#include <FirebaseESP32.h>
 #include <Adafruit_NeoPixel.h>
-#include <SinricPro.h>
-#include <SinricProSwitch.h>
+// #include <SinricPro.h>
+// #include <SinricProSwitch.h>
+#include <IOXhop_FirebaseESP32.h>
+#include <ArduinoJson.h>
 
 // Wifi
 #define WIFI_SSID ""        // Nome da rede
@@ -24,9 +26,9 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ
 #define SWITCH_ID "665b80d55d818a66fab35577"                                                       // Identificador do dispositivo 
 
 // Objeto firebase
-FirebaseData firebaseData;
-FirebaseConfig firebaseConfig;   
-FirebaseAuth firebaseAuth; 
+// FirebaseData firebaseData;
+// FirebaseConfig firebaseConfig;   
+// FirebaseAuth firebaseAuth; 
 
 // Mapeamento de gavetas para os LEDs
 // Cada linha -> uma gaveta, cada coluna -> um LED associado a ela
@@ -58,33 +60,41 @@ void setup() {
 
 
   // Inicializacao do Firebase
-  firebaseConfig.host = FIREBASE_HOST;
-  firebaseConfig.api_key = FIREBASE_AUTH;
-  firebaseConfig.signer.tokens.legacy_token = FIREBASE_AUTH;
+  // firebaseConfig.host = FIREBASE_HOST;
+  // firebaseConfig.api_key = FIREBASE_AUTH;
+  // firebaseConfig.signer.tokens.legacy_token = FIREBASE_AUTH;
 
-  Firebase.begin(&firebaseConfig, &firebaseAuth);
-  Firebase.reconnectWiFi(true);
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  // Firebase.reconnectWiFi(true);
 
   // Inicializacao do SinricPro
-  SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
+  /*SinricProSwitch &mySwitch = SinricPro[SWITCH_ID];
   mySwitch.onPowerState(onPowerState);
-  SinricPro.begin(APP_KEY, APP_SECRET);
+  SinricPro.begin(APP_KEY, APP_SECRET);*/
+
+  
 }
 
 void loop() {
   //SinricPro.handle();
 
   // Verifica a conexao Wi-Fi e reconecta se necessario
-  if (WiFi.status() != WL_CONNECTED) {
+   /*if (WiFi.status() != WL_CONNECTED) {
     connectToWiFi();
-  }
+  }*/
 
   // Le o estado do Firebase para obter o ID da gaveta acionada
-  if(Firebase.getInt(firebaseData, "/drawer/id_drawer")) {
-    int drawerId = firebaseData.intData();
+  if(Firebase.getInt("/drawer/config/id_drawer")) {
+     int drawerId = Firebase.getInt("/drawer/config/id_drawer");
 
-    if(drawerId >= 0 && drawerId < 9) {
-      lightUpDrawer(drawerId);
+    if (Firebase.failed()) {
+      Serial.println("Firebase get failed");
+      Serial.println(Firebase.error());
+      return;
+  }
+
+    if(drawerId > 0 && drawerId <= 9) {
+      lightUpDrawer(drawerId-1);
       visualEffect = false;
     }
     else {
@@ -100,6 +110,8 @@ void loop() {
   if(visualEffect) {
     showVisualEffect();
   }
+
+  delay(1000);
 }
 
 // Conecta Wi-Fi
@@ -146,15 +158,15 @@ void lightUpDrawer(int drawerId) {
     int ledIndex = drawerLEDMap[drawerId][i];
 
     if(ledIndex != -1) {
-      strip.setPixelColor(ledIndex, strip.Color(247, 166, 135));    // Cor pode ser modificada com o valor da tabela
+      strip.setPixelColor(ledIndex, strip.Color(Firebase.getInt("/drawer/config/drawer_color/R"), Firebase.getInt("/drawer/config/drawer_color/G"), Firebase.getInt("/drawer/config/drawer_color/B")));    // Cor pode ser modificada com o valor da tabela
     }
   }
   strip.show();
 }
 
 // Callback - mudança do estado de energia do dispositivo 
-bool onPowerState(const String &deviceId, bool &state) {
-  Serial.printf("Dispositivo %s ligado %s\r\n", deviceId.c_str(), state ? "on" : "off");
-  return true;
-}
+// bool onPowerState(const String &deviceId, bool &state) {
+ //  Serial.printf("Dispositivo %s ligado %s\r\n", deviceId.c_str(), state ? "on" : "off");
+  // return true;
+// }
 
