@@ -72,8 +72,9 @@ void loop() {
   } else {
     if (drawerId > 0 && drawerId <= 9) {
       if (drawerId != lastDrawerId) {
-        lightUpDrawer(drawerId - 1, fixedR, fixedG, fixedB);
+        lightUpDrawerWithEffect(drawerId - 1, fixedR, fixedG, fixedB);
         lastDrawerId = drawerId;
+        visualEffect = false;
       }
     } else {
       if (lastDrawerId != -1) {
@@ -81,6 +82,10 @@ void loop() {
         lastDrawerId = -1;
       }
     }
+  }
+
+  if (visualEffect) {
+    showVisualEffect();
   }
 
   delay(100);
@@ -105,6 +110,17 @@ void connectToWiFi() {
   }
 }
 
+void showVisualEffect() {
+  int R = random(0, 255);
+  int G = random(0, 255);
+  int B = random(0, 255);
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(R, G, B));
+  }
+  strip.show();
+}
+
 void lightUpDrawer(int drawerId, int r, int g, int b) {
   for (int i = 0; i < NUM_LEDS; i++) {
     strip.setPixelColor(i, strip.Color(0, 0, 0));
@@ -117,4 +133,29 @@ void lightUpDrawer(int drawerId, int r, int g, int b) {
     }
   }
   strip.show();
+}
+
+void lightUpDrawerWithEffect(int drawerId, int r, int g, int b) {
+  // Apaga todos os LEDs
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(0, 0, 0));
+  }
+  strip.show();
+  delay(500);
+
+  // Acende LEDs em sequência até o ID da gaveta selecionada
+  for (int i = 0; i <= drawerId; i++) {
+    for (int j = 0; j < 4; j++) {
+      int ledIndex = drawerLEDMap[i][j];
+      if (ledIndex != -1) {
+        strip.setPixelColor(ledIndex, strip.Color(r, g, b));
+      }
+    }
+    strip.show();
+    delay(250); // Atraso para o efeito de sequência
+  }
+
+  // Mostra apenas os LEDs da gaveta selecionada
+  delay(500);
+  lightUpDrawer(drawerId, r, g, b);
 }
