@@ -32,9 +32,20 @@ const int drawerLEDMap[9][4] = {
 bool visualEffect = true;
 int lastDrawerId = -1;
 
-const int fixedR = 255; // Valor fixo de R (vermelho)
-const int fixedG = 0;   // Valor fixo de G (verde)
-const int fixedB = 0;   // Valor fixo de B (azul)
+// Cor fixa de encontrado
+const int foundR = 255; // R (255)
+const int foundG = 214; // G (226)
+const int foundB = 75; // B (125)
+
+// Cor de procura
+const int searchR = 166; // R (169)
+const int searchG = 98; // G (136)
+const int searchB = 255; // B (249)
+
+// Cor inicial
+const int initialR = 166; // R (169)
+const int initialG = 98; // G (136)
+const int initialB = 255; // B (249)
 
 void setup() {
   Serial.begin(115200);
@@ -44,18 +55,29 @@ void setup() {
   strip.begin();
   strip.show();
 
-  // Acende todos os LEDs para indicar que o dispositivo foi ligado
+  // Configura os LEDs na inicialização
   for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(fixedR, fixedG, fixedB));
+    strip.setPixelColor(i, strip.Color(initialR, initialG, initialB)); // Cor roxa
   }
+
+  // LEDs correspondentes ao ID 3 (amarelo)
+  for (int i = 0; i < 4; i++) {
+    int ledIndex = drawerLEDMap[2][i]; // ID 3 é index 2
+    if (ledIndex != -1) {
+      strip.setPixelColor(ledIndex, strip.Color(foundR, foundG, foundB)); // Cor amarela
+    }
+  }
+
+  // LEDs correspondentes ao ID 7 (apagado)
+  for (int i = 0; i < 4; i++) {
+    int ledIndex = drawerLEDMap[6][i]; // ID 7 é index 6
+    if (ledIndex != -1) {
+      strip.setPixelColor(ledIndex, strip.Color(0, 0, 0)); // Apagado
+    }
+  }
+
   strip.show();
   delay(2000); // Mantém os LEDs acesos por 2 segundos
-
-  // Apaga todos os LEDs
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(0, 0, 0));
-  }
-  strip.show();
 
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 }
@@ -72,7 +94,7 @@ void loop() {
   } else {
     if (drawerId > 0 && drawerId <= 9) {
       if (drawerId != lastDrawerId) {
-        lightUpDrawerWithEffect(drawerId - 1, fixedR, fixedG, fixedB);
+        lightUpDrawerWithEffect(drawerId - 1, foundR, foundG, foundB);
         lastDrawerId = drawerId;
         visualEffect = false;
       }
@@ -148,7 +170,7 @@ void lightUpDrawerWithEffect(int drawerId, int r, int g, int b) {
     for (int j = 0; j < 4; j++) {
       int ledIndex = drawerLEDMap[i][j];
       if (ledIndex != -1) {
-        strip.setPixelColor(ledIndex, strip.Color(r, g, b));
+        strip.setPixelColor(ledIndex, strip.Color(searchR, searchG, searchB));
       }
     }
     strip.show();
