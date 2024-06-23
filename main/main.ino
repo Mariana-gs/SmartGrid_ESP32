@@ -30,6 +30,11 @@ const int drawerLEDMap[9][4] = {
 };
 
 bool visualEffect = true;
+int lastDrawerId = -1;
+
+const int fixedR = 255; // Valor fixo de R (vermelho)
+const int fixedG = 0;   // Valor fixo de G (verde)
+const int fixedB = 0;   // Valor fixo de B (azul)
 
 void setup() {
   Serial.begin(115200);
@@ -37,6 +42,19 @@ void setup() {
   connectToWiFi();
 
   strip.begin();
+  strip.show();
+
+  // Acende todos os LEDs para indicar que o dispositivo foi ligado
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(fixedR, fixedG, fixedB));
+  }
+  strip.show();
+  delay(2000); // Mantém os LEDs acesos por 2 segundos
+
+  // Apaga todos os LEDs
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(0, 0, 0));
+  }
   strip.show();
 
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
@@ -51,27 +69,18 @@ void loop() {
 
   if (Firebase.failed()) {
     Serial.println("Falha ao ler o ID da gaveta no Firebase");
-    visualEffect = true;
   } else {
     if (drawerId > 0 && drawerId <= 9) {
-      int r = Firebase.getInt("/drawer/config/drawer_color/R");
-      int g = Firebase.getInt("/drawer/config/drawer_color/G");
-      int b = Firebase.getInt("/drawer/config/drawer_color/B");
-
-      if (Firebase.failed()) {
-        Serial.println("Falha ao ler as cores da gaveta no Firebase");
-        visualEffect = true;
-      } else {
-        lightUpDrawer(drawerId - 1, r, g, b);
-        visualEffect = false;
+      if (drawerId != lastDrawerId) {
+        lightUpDrawer(drawerId - 1, fixedR, fixedG, fixedB);
+        lastDrawerId = drawerId;
       }
     } else {
-      visualEffect = true;
+      if (lastDrawerId != -1) {
+        lightUpDrawer(lastDrawerId, 0, 0, 0); // Apaga a gaveta acesa
+        lastDrawerId = -1;
+      }
     }
-  }
-
-  if (visualEffect) {
-    showVisualEffect();
   }
 
   delay(100);
@@ -94,17 +103,6 @@ void connectToWiFi() {
     Serial.println("Falha ao conectar ao Wi-Fi. Tentando novamente em 5 segundos.");
     delay(5000);
   }
-}
-
-void showVisualEffect() {
-  int R = random(0, 255);
-  int G = random(0, 255);
-  int B = random(0, 255);
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(R, G, B));
-  }
-  strip.show();
 }
 
 void lightUpDrawer(int drawerId, int r, int g, int b) {
