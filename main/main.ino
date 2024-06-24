@@ -29,7 +29,7 @@ const int drawerLEDMap[9][4] = {
   {26, 27, 28, -1}
 };
 
-bool visualEffect = true;
+bool visualEffect = false;
 int lastDrawerId = -1;
 
 // Cor fixa de encontrado
@@ -97,6 +97,8 @@ void loop() {
         lightUpDrawerWithEffect(drawerId - 1, foundR, foundG, foundB);
         lastDrawerId = drawerId;
         visualEffect = false;
+        delay(1000);
+        Firebase.setInt("/drawer/config/id_drawer", -1);
       }
     } else {
       if (lastDrawerId != -1) {
